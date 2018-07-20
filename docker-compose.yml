@@ -1,0 +1,58 @@
+version: "3"
+services:
+  node:
+    tty: true
+    image: node:8
+    environment:
+      YARN_CACHE_FOLDER: '/home/node/.yarn-cache'
+    user: node
+    working_dir: /
+    volumes:
+      - ./:/var/www
+    networks:
+      - symfony
+
+  php-fpm:
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    build:
+      context: docker/php-fpm
+    ports:
+      - "9004:9000"
+    depends_on:
+      - database
+      - node
+    environment:
+      PHP_IDE_CONFIG: "serverName=PHPSTORM"
+      XDEBUG_CONFIG: "remote_host=192.168.144.1 idekey=PHPSTORM remote_enable=1  remote_connect_back=1 default_enable=1"
+    networks:
+      - symfony
+
+  database:
+    image: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: symfony
+      MYSQL_PASSWORD: symfony
+    networks:
+      - symfony
+
+  nginx:
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    build:
+      context: docker/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - symfony
+    depends_on:
+      - php-fpm
+
+networks:
+  symfony: ~
