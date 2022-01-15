@@ -1,0 +1,55 @@
+version: "3.4"
+
+x-base-php: &base-php
+  build:
+    context: ./php
+    args:
+      UID: ${UID:-1000}
+      GID: ${GID:-1000}
+  env_file: .env
+  volumes:
+    - ../:/var/www/html
+    - /php/ini/symfony.ini:/usr/local/etc/php/conf.d/99-symfony.ini
+  environment:
+    COMPOSER_HOME: /var/www/html/.composer
+    HOME: /var/www/html
+    PHP_XDEBUG_ENABLED: ${PHP_XDEBUG_ENABLED:-0}
+    XDEBUG_MODE: ${XDEBUG_MODE:-off}
+    PHP_IDE_CONFIG: serverName=symfony_6
+    XDEBUG_CONFIG: ${XDEBUG_CONFIG:-}
+
+services:
+  php:
+    <<: *base-php
+    container_name: cdm-php
+  database:
+    image: postgres:9.6.24
+    volumes:
+      - database_data:/var/lib/postgresql/data
+      - /database/init.d:/docker-entrypoint-initdb.d/
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-symfony}
+      POSTGRES_USER: ${DATABASE_USER:-symfony}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-symfony}
+    ports:
+      - 5432:5432
+
+  nginx:
+    image: nginx:1.19.6
+    volumes:
+      - ../:/var/www/html
+      - ./nginx/symfony-local.conf.template:/etc/nginx/templates/symfony-local.conf.template:ro
+    environment:
+      NGINX_ROOT: ${NGINX_ROOT:-/var/www/html/public}
+    ports:
+      - ${NGINX_PORT:-8080}:8080
+
+  node:
+    image: node
+    volumes:
+      - ../:/var/www/html
+    working_dir: /var/www/html
+
+volumes:
+  database_data:
+    driver: local
