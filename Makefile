@@ -1,10 +1,15 @@
 DOCKER_RUN_PHP = docker-compose -f .docker/docker-compose.yml -f .docker/docker-compose.override.yml run --rm php "bash" "-c"
 DOCKER_COMPOSE = docker-compose -f .docker/docker-compose.yml -f .docker/docker-compose.override.yml
 
+.env:
+	cat .env.dist | tee .env
+	cat ./.docker/.env.dist | sed  -e "s/{UID}/$(shell id --user)/" -e "s/{GID}/$(shell id --group)/" | tee ./.docker/.env
+	cat ./.docker/docker-compose.override.yml.dist | tee ./.docker/docker-compose.override.yml
+
 src/vendor:
 	$(DOCKER_RUN_PHP) "composer install --no-interaction"
 
-upd: #[Docker] Start containers
+upd: .env #[Docker] Start containers
 	$(DOCKER_COMPOSE) up --detach --remove-orphans
 
 stop: #[Docker] Down containers
@@ -13,19 +18,19 @@ stop: #[Docker] Down containers
 down: #[Docker] Down containers
 	$(DOCKER_COMPOSE) down
 
-build: #[Docker] Build containers
+build: .env #[Docker] Build containers
 	$(DOCKER_COMPOSE) build
 
 ps: # [Docker] Show running containers
 	$(DOCKER_COMPOSE) ps
 
-bash: #[Docker] Connect to php container with current host user
+bash: .env #[Docker] Connect to php container with current host user
 	$(DOCKER_COMPOSE) exec -u $$(id -u $${USER}):$$(id -g $${USER}) php bash
 
-bash-root: #[Docker] Connect to php container with root user
+bash-root: .env #[Docker] Connect to php container with root user
 	$(DOCKER_COMPOSE) exec -u root php bash
 
-php: #[Docker] Run container with current host user
+php: .env #[Docker] Run container with current host user
 	$(DOCKER_COMPOSE) run --rm php bash
 
 node: #[Docker] Connect to node container

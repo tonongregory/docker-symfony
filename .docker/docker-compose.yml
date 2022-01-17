@@ -21,7 +21,6 @@ x-base-php: &base-php
 services:
   php:
     <<: *base-php
-    container_name: cdm-php
   database:
     image: postgres:9.6.24
     volumes:
