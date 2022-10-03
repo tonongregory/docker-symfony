@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eux
 
-if [[ "${PHP_XDEBUG_ENABLED}" == "1" ]]; then
+if [[ "${XDEBUG_MODE}" == "debug" ]]; then
     docker-php-ext-enable xdebug
 fi
 
