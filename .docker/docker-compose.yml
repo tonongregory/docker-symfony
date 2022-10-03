@@ -6,14 +6,19 @@ x-base-php: &base-php
     args:
       UID: ${UID:-1000}
       GID: ${GID:-1000}
+      PHP_VERSION: ${PHP_VERSION:-8.11}
+      XDEBUG_VERSION: ${XDEBUG_VERSION:-3.1.4}
   env_file: .env
+  working_dir: ${VOLUME_ROOT:-/var/www/html}
   volumes:
-    - ../:/var/www/html
-    - /php/ini/symfony.ini:/usr/local/etc/php/conf.d/99-symfony.ini
+    - ../:${VOLUME_ROOT:-/var/www/html}
+    - /php/ini/symfony.ini:/usr/local/etc/php/conf.d/999-symfony.ini
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
   environment:
-    COMPOSER_HOME: /var/www/html/.composer
-    HOME: /var/www/html
-    PHP_XDEBUG_ENABLED: ${PHP_XDEBUG_ENABLED:-0}
+    COMPOSER_HOME: ${VOLUME_ROOT:-/var/www/html}/.composer
+    COMPOSER_MEMORY_LIMIT: -1
+    HOME: ${VOLUME_ROOT:-/var/www/html}
     XDEBUG_MODE: ${XDEBUG_MODE:-off}
     PHP_IDE_CONFIG: serverName=symfony_6
     XDEBUG_CONFIG: ${XDEBUG_CONFIG:-}
@@ -21,33 +26,27 @@ x-base-php: &base-php
 services:
   php:
     <<: *base-php
+    ports:
+      - '8000:8000'
+  
   database:
-    image: postgres:9.6.24
+    image: mysql:8.0
     volumes:
-      - database_data:/var/lib/postgresql/data
-      - /database/init.d:/docker-entrypoint-initdb.d/
+      - database_data:/var/lib/mysql
+      - /.docker/database/init.d:/docker-entrypoint-initdb.d/
     environment:
-      POSTGRES_DB: ${DATABASE_NAME:-symfony}
-      POSTGRES_USER: ${DATABASE_USER:-symfony}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-symfony}
+      MYSQL_DATABASE: ${DATABASE_NAME:-symfony}
+      MYSQL_USER: ${DATABASE_USER:-symfony}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-symfony}
+      MYSQL_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD:-symfony}
     ports:
-      - 5432:5432
-
-  nginx:
-    image: nginx:1.19.6
-    volumes:
-      - ../:/var/www/html
-      - ./nginx/symfony-local.conf.template:/etc/nginx/templates/symfony-local.conf.template:ro
-    environment:
-      NGINX_ROOT: ${NGINX_ROOT:-/var/www/html/public}
-    ports:
-      - ${NGINX_PORT:-8080}:8080
+      - '3306:3306'
 
   node:
     image: node
     volumes:
-      - ../:/var/www/html
-    working_dir: /var/www/html
+      - ../:${VOLUME_ROOT:-/var/www/html}
+    working_dir: ${VOLUME_ROOT:-/var/www/html}
 
 volumes:
   database_data:
