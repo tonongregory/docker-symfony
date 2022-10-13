@@ -8,6 +8,9 @@ env:
 	@if [ ! -f "./.docker/.env" ]; then\
 		cat ./.docker/.env.dist | sed  -e "s/{UID}/$(shell id --user)/" -e "s/{GID}/$(shell id --group)/" | tee ./.docker/.env
 	fi
+	@if [ ! -f "./.docker/docker-compose.override.yml" ]; then\
+		cp ./.docker/docker-compose.override.yml.dist ./.docker/docker-compose.override.yml
+	fi
 
 src/vendor:
 	$(DOCKER_RUN_PHP) "composer install --no-interaction"
